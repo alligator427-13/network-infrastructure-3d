@@ -52,6 +52,8 @@ import MediaExportPanel from './components/MediaExportPanel';
 import XRControls from './components/XRControls';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import ConfigModal from './components/ConfigModal';
+import CameraViewsSelector from './components/CameraViewsSelector';
+import LegendPanel from './components/LegendPanel';
 
 // Equipment Node 3D Component
 function EquipmentNode3D({
@@ -840,6 +842,7 @@ function App() {
         onSpacingToggle={() => setUiState(prev => ({ ...prev, showSpacingModal: !prev.showSpacingModal }))}
         onDiscoveryToggle={() => setUiState(prev => ({ ...prev, showDiscoveryModal: !prev.showDiscoveryModal }))}
         onViewsToggle={() => setUiState(prev => ({ ...prev, showViewsModal: !prev.showViewsModal }))}
+        onLegendToggle={() => setUiState(prev => ({ ...prev, showLegend: !prev.showLegend }))}
         onExportToggle={() => setUiState(prev => ({ ...prev, showExportModal: !prev.showExportModal }))}
         onXRToggle={() => setUiState(prev => ({ ...prev, showXRModal: !prev.showXRModal }))}
         onShortcutsToggle={() => setUiState(prev => ({ ...prev, showShortcutsHelp: !prev.showShortcutsHelp }))}
@@ -901,6 +904,7 @@ function App() {
           onDeleteNode={handleDeleteNode}
           onUpdateNode={handleUpdateNode}
           selectedNodeIds={selectedNodes}
+          addNotification={addNotification}
           pingResults={pingResults}
         />
       )}
@@ -1044,6 +1048,62 @@ function App() {
         />
       )}
 
+      {/* Camera Views Selector Modal */}
+      {uiState.showViewsModal && (
+        <CameraViewsSelector
+          onClose={() => setUiState(prev => ({ ...prev, showViewsModal: false }))}
+          onSelectView={(view) => {
+            const newCameraPos = new THREE.Vector3(...view.position);
+            const newCameraTarget = new THREE.Vector3(...view.target);
+            
+            if (cameraRef.current) {
+              cameraRef.current.position.copy(newCameraPos);
+              cameraRef.current.lookAt(newCameraTarget);
+            }
+            
+            setCurrentViewId(view.id);
+            setUiState(prev => ({ ...prev, showViewsModal: false }));
+            addNotification('success', 'Vue sélectionnée', `Passage à la vue: ${view.name}`);
+          }}
+          currentViewId={currentViewId}
+        />
+      )}
+
+      {/* Legend Panel */}
+      {uiState.showLegend && (
+        <LegendPanel
+          onClose={() => setUiState(prev => ({ ...prev, showLegend: false }))}
+          themeMode={theme.mode}
+        />
+      )}
+
+      {/* Camera Views Selector Modal */}
+      {uiState.showViewsModal && (
+        <CameraViewsSelector
+          onClose={() => setUiState(prev => ({ ...prev, showViewsModal: false }))}
+          onSelectView={(view) => {
+            const newCameraPos = new THREE.Vector3(...view.position);
+            const newCameraTarget = new THREE.Vector3(...view.target);
+            if (cameraRef.current) {
+              cameraRef.current.position.copy(newCameraPos);
+              cameraRef.current.lookAt(newCameraTarget);
+            }
+            setCurrentViewId(view.id);
+            setUiState(prev => ({ ...prev, showViewsModal: false }));
+            addNotification('success', 'Vue sélectionnée', `Passage à la vue: ${view.name}`);
+          }}
+          currentViewId={currentViewId}
+        />
+      )}
+
+      {/* Legend Panel */}
+      {uiState.showLegend && (
+        <LegendPanel
+          onClose={() => setUiState(prev => ({ ...prev, showLegend: false }))}
+          themeMode={theme.mode}
+        />
+      )}
+
       {/* Config Modal */}
       {uiState.showConfigModal && (
         <ConfigModal
@@ -1150,81 +1210,6 @@ function App() {
           </div>
         </div>
       )}
-
-      {/* Legend Panel */}
-      {uiState.showLegend && (
-        <div
-          className="panel"
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            right: 0,
-            width: 320,
-            height: 200,
-            zIndex: 100,
-          }}
-        >
-          <div className="panel-header">
-            <h3 className="text-white font-semibold">Légende</h3>
-          </div>
-          <div className="panel-body scrollbar-thin">
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-white font-medium mb-2">Statut</h4>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="status-indicator bg-green-500"></span>
-                    <span className="text-gray-300 text-sm">En ligne (&lt; 100ms)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="status-indicator bg-yellow-500"></span>
-                    <span className="text-gray-300 text-sm">Attention (100-250ms)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="status-indicator bg-red-500"></span>
-                    <span className="text-gray-300 text-sm">Hors ligne (timeout)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-white font-medium mb-2">Sites</h4>
-                <div className="space-y-2">
-                  {Object.entries(SITE_COLORS).map(([id, color]) => (
-                    <div key={id} className="flex items-center gap-2">
-                      <span
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: color }}
-                      ></span>
-                      <span className="text-gray-300 text-sm">
-                        {id === 'site-principal' ? 'Site Principal' :
-                         id === 'site-distant' ? 'Site Distant' :
-                         id === 'pradoland-4' ? 'Pradoland 4' : id}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-white font-medium mb-2">Types d'équipements</h4>
-                <div className="space-y-1">
-                  {Object.entries(EQUIPMENT_COLORS).slice(0, 5).map(([type, color]) => (
-                    <div key={type} className="flex items-center gap-2">
-                      <span
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: color }}
-                      ></span>
-                      <span className="text-gray-300 text-xs">
-                        {EQUIPMENT_LABELS[type as EquipmentType] || type}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
